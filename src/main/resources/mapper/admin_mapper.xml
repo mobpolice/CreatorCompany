@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.admin.dao.AdminDAO">
+	
+	<select id="MemberList" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT member.*, dept.name AS dept_name
+			FROM member
+		JOIN dept ON member.dept_id = dept.id
+	</select>
+	
+	<select id="AdminMemberDetail" parameterType="java.lang.String" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT member.*, dept.name AS dept_name, job_level.name AS job_name
+			FROM member
+			JOIN dept ON member.dept_id = dept.id
+			JOIN job_level ON member.job_level_id = job_level.id
+		WHERE member.id = #{id}
+	</select>
+	
+	<update id="MemberUpdate" parameterType="kr.co.cc.admin.dto.AdminDTO">
+	    UPDATE member
+	    <set>
+	        <choose>
+	            <when test="dto.job_name != null">
+	                job_level_id = (SELECT id FROM job_level WHERE name = #{dto.job_name})
+	            </when>
+	            <otherwise>
+	                job_level_id = job_level_id
+	            </otherwise>
+	        </choose>,
+	        <choose>
+	            <when test="dto.dept_name != null">
+	                dept_id = (SELECT id FROM dept WHERE name = #{dto.dept_name})
+	            </when>
+	            <otherwise>
+	                dept_id = dept_id
+	            </otherwise>
+	        </choose>,
+	        <choose>
+	            <when test="dto.status != null">
+	                status = #{dto.status}
+	            </when>
+	            <otherwise>
+	                status = status
+	            </otherwise>
+	        </choose>,
+	        <choose>
+	            <when test="dto.admin_chk != null">
+	                admin_chk = #{dto.admin_chk}
+	            </when>
+	            <otherwise>
+	                admin_chk = admin_chk		
+	            </otherwise>
+	        </choose>
+	    </set>
+	    WHERE member.id = #{user_id}
+	</update>
+	
+	<select id="MemberONOFFList" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT name, id, dept_name
+			FROM member
+	</select>
+	
+	<select id="MemberONOFFListDetail" parameterType="java.lang.String" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT name, id, birth_at, hire_ae, dept_name, job_name, email, phone
+			FROM member
+		WHERE id = #{id}
+	</select>
+	
+	<delete id="MemberONOFFDelete">
+		DELETE FROM member WHERE id = #{id}
+	</delete>
+	
+	<select id="AdminMemberDetailPhoto" resultType="kr.co.cc.admin.dto.AdminDTO">
+	  SELECT m.*,
+	         a.id AS photoName,
+	         a.ori_file_name,
+	         a.classification,
+	         a.identify_value
+	  FROM member m
+	  LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = '프로필사진'
+	  WHERE m.id = #{id}
+	</select>
+	
+	<select id="admin_chk" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT admin_chk
+		FROM member
+		WHERE id = #{id}
+	</select>
+	
+	<select id="admin_chkDetail" resultType="kr.co.cc.admin.dto.AdminDTO">
+		SELECT admin_chk
+		FROM member
+		WHERE id = #{id}
+	</select> 
+	
+</mapper>

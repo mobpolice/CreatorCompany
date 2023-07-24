@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.archive.dao.ArchiveDAO">
+
+	<select id="totalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM archive_board WHERE status = 1
+	</select>
+
+	<select id="totalCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (ab.id) FROM archive_board ab
+		JOIN member m ON ab.member_id = m.id
+		WHERE CONCAT(ab.subject, m.name) LIKE CONCAT('%', #{search}, '%') 
+	</select>	
+
+	<select id="archivelist" resultType="kr.co.cc.archive.dto.ArchiveDTO">
+		SELECT ab.id, ab.category, m.user_id, m.name, ab.subject, ab.hit, ab.create_at, m.admin_chk
+		FROM archive_board ab
+		JOIN member m ON ab.member_id = m.id
+		WHERE ab.status =1
+		ORDER BY ab.create_at DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>	
+
+	<select id="archivelistSearch" parameterType="hashmap" resultType="kr.co.cc.archive.dto.ArchiveDTO">
+	    SELECT ab.id, ab.category ,m.name, m.user_id, ab.subject, ab.hit, ab.create_at, m.admin_chk
+	    FROM archive_board ab
+	    JOIN member m ON ab.member_id = m.id
+	    WHERE CONCAT(ab.subject, m.name) LIKE CONCAT('%', #{search}, '%') 
+	    AND ab.status = 1
+	    ORDER BY ab.create_at DESC
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<!-- 자료실 작성 -->
+	<insert 
+	    id="archiveWrite" 
+	    parameterType="kr.co.cc.archive.dto.ArchiveDTO" 
+	    useGeneratedKeys="false">
+	    <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+	        SELECT UUID()
+	    </selectKey>
+	    INSERT INTO archive_board (id, member_id, category, subject, content, hit, status)	
+	    VALUES (#{id}, #{member_id}, #{category}, #{subject}, #{content}, 0, 1)
+	</insert>
+
+
+
+	<!-- 파일 첨부 -->
+	<insert id="archivefileWrite">
+		INSERT INTO attachment(ori_file_name, id, classification, identify_value)
+			VALUES(#{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+
+	<!-- 자료실 상세보기 -->
+	<select id="archivedetail" resultType="kr.co.cc.archive.dto.ArchiveDTO">
+	    SELECT ab.id, ab.member_id, ab.category, ab.subject, ab.content, ab.hit, ab.create_at, m.dept_id, m.name, m.user_id, d.name AS dept_name
+	    FROM archive_board ab
+	    JOIN member m on ab.member_id = m.id
+	    JOIN dept d on m.dept_id = d.id
+	    WHERE ab.id = #{id}
+	</select>
+
+
+	<!-- 조회수 상승 -->
+	<update id="upHit">
+		UPDATE archive_board SET hit = hit + 1 WHERE id = #{id}
+	</update>	
+	
+	<!-- 자료실 상세보기 (파일) -->
+	<select id="archiveDetailFile" resultType="kr.co.cc.doc.dto.AttachmentDTO">
+		SELECT* FROM attachment WHERE identify_value = #{id}
+	</select>
+
+
+
+
+	<update id="archiveUpdate" parameterType="hashmap">
+		UPDATE archive_board SET 
+		subject = #{subject}
+		,content = #{afterContent}
+		WHERE id = #{id}
+	</update>
+	
+
+
+	<delete id="removeFileName" parameterType="String">
+		DELETE FROM attachment WHERE id = #{fileName} AND classification = '자료실'
+	</delete>
+
+	<update id="archivedelete" parameterType="java.lang.String">
+		UPDATE archive_board SET status = 0 WHERE status = 1 and id = #{id}
+	</update>	
+
+	<select id="logincheck" resultType="kr.co.cc.archive.dto.ArchiveDTO">
+		SELECT admin_chk FROM member WHERE id = #{loginId}
+	</select>
+
+
+
+
+
+
+
+
+</mapper>

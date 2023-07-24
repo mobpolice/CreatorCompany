@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	   
+<mapper namespace="kr.co.cc.chat.dao.ChatDAO">
+
+	<select id="memberListAll" resultType="kr.co.cc.chat.dto.MemberDTO">
+		SELECT m.id, m.name, d.name as dept_name
+		from member m inner join dept d 
+		on m.dept_id = d.id
+	</select>
+	
+	<insert 
+       id="createRoom" 
+       parameterType="kr.co.cc.chat.dto.ChatDTO" 
+       useGeneratedKeys="false">
+       <selectKey keyProperty="chat_room_id" resultType="java.lang.String" order="BEFORE">
+           SELECT UUID()
+       </selectKey>
+       INSERT INTO chat_room(chat_room_id,name,blind) VALUES(#{chat_room_id},#{name}, false)
+   </insert>
+		
+	<insert id="insert_chat_room_info">
+		INSERT INTO chat_room_info(chat_room_id, member_id, state) VALUES(#{param1}, #{param2}, 'in')
+	</insert>
+	
+	<insert id="insert_chat">
+		INSERT INTO chat(send_id, chat_room_id, content, send_time) VALUES('방장', #{param1}, '방이 생성 되었습니다.', now())
+	</insert>
+	
+	
+	<select id="chatList" resultType="kr.co.cc.chat.dto.ChatDTO" parameterType="String">		
+		SELECT i.chat_room_id, i.member_id, i.state, c.send_time
+		FROM chat_room_info i
+		INNER JOIN chat c ON i.chat_room_id = c.chat_room_id
+		WHERE i.member_id = #{member_id} AND i.state = 'in'
+		group by i.chat_room_id
+		ORDER BY c.send_time DESC
+	</select>
+	
+	<select id="room_list" resultType="kr.co.cc.chat.dto.ChatDTO" parameterType="String">
+		select * from chat_room
+		WHERE chat_room_id = #{chat_room_id}
+	</select>
+	
+	<select id="chatHistory" resultType="kr.co.cc.chat.dto.ChatDTO" parameterType="String">
+		SELECT c.send_id, c.chat_room_id, c.content, c.send_time, c.blind, m.id, m.name, d.name AS dept_name, a.id AS profileImg
+		FROM `chat` c
+		INNER JOIN `member` m ON c.send_id = m.id
+		INNER JOIN dept d ON m.dept_id = d.id
+		LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = "프로필사진"
+		WHERE chat_room_id = #{chat_room_id}
+		ORDER BY c.send_time
+	</select>
+		
+	<select id="chatLoad" parameterType="String">
+		SELECT c.send_id, c.chat_room_id, c.content, c.send_time, c.blind, m.id, m.name, d.name AS dept_name, a.id AS profileImg
+		FROM `chat` c
+		INNER JOIN `member` m ON c.send_id = m.id
+		INNER JOIN dept d ON m.dept_id = d.id
+		LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = "프로필사진"
+		WHERE chat_room_id = #{chat_room_id}
+		ORDER BY c.send_time
+	</select>
+	
+	<insert id="chatStored" parameterType="hashmap">
+		INSERT INTO chat(send_id, chat_room_id, content, send_time)
+		VALUES(#{send_id}, #{chat_room_id}, #{content}, now())	
+	</insert>
+	
+	<update id="chatRoomExit">
+		UPDATE chat_room_info SET state = 'out'
+		WHERE member_id=#{param2}
+		AND chat_room_id=#{param1}
+	</update>
+	
+	<select id="chatNameChk">
+		select name from member where id = #{param1}
+	</select>
+	
+	<select id="memberList" resultType="kr.co.cc.chat.dto.MemberDTO">
+		SELECT m.id, m.name, d.name as dept_name
+		from member m inner join dept d 
+		on m.dept_id = d.id
+		WHERE m.id NOT IN (
+			SELECT member_id
+			FROM chat_room_info
+			WHERE chat_room_id = #{param1}
+		)
+	</select>
+	
+	<select id="chatMember">
+	SELECT m.id, m.name, d.name as dept_name
+	FROM member m
+	INNER JOIN dept d 
+	ON m.dept_id = d.id
+	WHERE m.id IN (
+	    SELECT member_id
+	    FROM chat_room_info
+	    WHERE chat_room_id = #{param1}  AND state = 'in'
+	)
+	</select>
+	
+
+	
+
+</mapper>

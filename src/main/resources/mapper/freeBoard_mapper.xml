@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.freeBoard.dao.FreeBoardDAO">
+
+	<select id="totalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM free_board WHERE status = 1
+	</select>
+
+	<select id="totalCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (fb.id) FROM free_board fb
+		JOIN member m ON fb.member_id = m.id
+		WHERE CONCAT(fb.subject, m.user_id) LIKE CONCAT('%', #{search}, '%') AND fb.status = 1
+	</select>	
+
+	<select id="freelist" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO">
+		SELECT fb.id, m.user_id, fb.subject, fb.hit, fb.create_at, m.name
+		FROM free_board fb
+		JOIN member m ON fb.member_id = m.id
+		WHERE fb.status =1
+		ORDER BY fb.create_at DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>	
+
+	<select id="freelistSearch" parameterType="hashmap" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO">
+	    SELECT fb.id, m.user_id, fb.subject, fb.hit, fb.create_at, m.name
+	    FROM free_board fb
+	    JOIN member m ON fb.member_id = m.id
+	    WHERE CONCAT(fb.subject, m.user_id) LIKE CONCAT('%', #{search}, '%') 
+	    AND fb.status = 1
+	    ORDER BY fb.create_at DESC
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+
+
+	<!-- 사내게시판 작성 -->
+	<insert 
+	    id="freeWrite" 
+	    parameterType="kr.co.cc.freeBoard.dto.FreeBoardDTO" 
+	    useGeneratedKeys="false">
+	    <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+	        SELECT UUID()
+	    </selectKey>
+	    INSERT INTO free_board (id, member_id, subject, content, hit, status)	
+	    VALUES (#{id}, #{member_id}, #{subject}, #{content}, 0, 1)
+	</insert>
+
+	<update id="freeDelete">
+	  UPDATE free_board SET status = 0 WHERE id = #{id}
+	</update>
+
+	<!-- 파일 첨부 -->
+	<insert id="freefileWrite">
+		INSERT INTO attachment(ori_file_name, id, classification, identify_value)
+			VALUES(#{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+
+	<!-- 사내게시판 상세보기 -->
+	<select id="freedetail" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO">
+	    SELECT fb.id, fb.member_id, fb.subject, fb.content, fb.hit, fb.create_at, m.dept_id,m.name, m.admin_chk
+	    from free_board fb
+	    join member m on fb.member_id = m.id
+	    where fb.id = #{id}
+	</select>
+
+
+	<!-- 조회수 상승 -->
+	<update id="freeupHit">
+		UPDATE free_board SET hit = hit + 1 WHERE id = #{id}
+	</update>	
+	
+	<!-- 자료실 상세보기 (파일) -->
+	<select id="freeDetailFile" resultType="kr.co.cc.doc.dto.AttachmentDTO">
+		SELECT* FROM attachment WHERE identify_value = #{id}
+	</select>
+
+	<select id="logincheck" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO">
+		SELECT admin_chk FROM member WHERE id = #{param1}
+	</select>	
+
+
+	<!-- 댓글 조회 -->
+	<select id="replyList" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO" parameterType="hashmap">
+		SELECT r.id ,r.free_board_id ,r.member_id ,r.content ,r.create_at, m.user_id , m.name from reply r 
+		JOIN member m on m.id = r.member_id
+		WHERE r.status = 1	AND r.free_board_id = #{free_board_id} 
+		ORDER BY r.create_at DESC
+	</select>
+	
+	
+	<!-- 댓글 작성 -->
+	<insert 
+	 id="postWrite"  parameterType="kr.co.cc.freeBoard.dto.FreeBoardDTO" >
+	INSERT into reply (free_board_id,member_id,content,status)
+	VALUES (#{free_board_id},#{member_id},#{content},1)
+	</insert>
+	
+	
+	<!-- 단일 댓글 조회-->
+	
+	<select id="replySelect" resultType="kr.co.cc.freeBoard.dto.FreeBoardDTO">
+		SELECT r.id ,r.free_board_id ,r.member_id ,r.content ,r.create_at, m.user_id , m.name from reply r 
+		JOIN member m on m.id = r.member_id
+		WHERE r.id = #{id}	AND r.free_board_id = #{free_board_id} 
+	</select>	
+	
+	
+	<update id="commentUpdate" parameterType="hashmap">
+		UPDATE reply SET 
+		content = #{content}
+		WHERE id = #{id}
+	</update>	
+	
+	<select id="replyTotalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM reply WHERE status = 1
+	</select>	
+	
+	
+	<update id="replyDelete">
+	  UPDATE reply
+	  SET status = 0
+	  WHERE id = #{id}
+	</update>
+	
+	
+	<update id="freeUpdate" parameterType="hashmap">
+		UPDATE free_board SET 
+		subject = #{subject}
+		,content = #{afterContent}
+		WHERE id = #{id}
+	</update>
+
+
+	<delete id="removeFileName" parameterType="String">
+		DELETE FROM attachment WHERE id = #{fileName} AND classification = '게시판'
+	</delete>	
+	
+	
+	
+
+</mapper>

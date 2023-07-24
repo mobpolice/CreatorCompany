@@ -31,5 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
-.mvn/
-src/test/java/kr/co/cc/CreatorCompanyApplicationTests.java
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties

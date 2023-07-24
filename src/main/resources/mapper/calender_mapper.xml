@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC   "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.calender.dao.CalenderDAO">
+	
+	<select id="CalenderList" parameterType="java.lang.String" resultType="kr.co.cc.calender.dto.CalenderDTO">
+		SELECT id, member_id, title, content, start_at, end_at, color, create_at
+			FROM calender
+		WHERE member_id = #{id}
+	</select>
+	
+	<insert id="CalenderListDrop" parameterType="java.util.List">
+		<selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+	        SELECT UUID()
+	    </selectKey>
+		INSERT INTO calender(id, member_id, title, content, start_at, end_at, color, create_at)
+			VALUES(#{id}, #{member_id}, #{title}, #{content}, #{start_at}, #{end_at}, #{color}, #{create_at})
+	</insert>
+	
+	<delete id="CalenderListDelete">
+   		DELETE FROM calender WHERE id = #{eventId}
+	</delete>
+	
+	<update id="CalenderListResize" parameterType="map">
+		UPDATE calender
+			SET start_at = #{start_at}, end_at = #{end_at}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="CalenderListEventDrop" parameterType="map">
+		UPDATE calender
+			SET start_at = #{start_at}, end_at = #{end_at}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

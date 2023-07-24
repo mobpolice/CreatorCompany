@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.member.dao.MemberDAO">
+
+	<insert id = "join" parameterType="kr.co.cc.member.dto.MemberDTO"
+		useGeneratedKeys="false">
+		<selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+	        SELECT UUID()
+	    </selectKey>
+		INSERT INTO member(id,user_id,password,name,birth_at,hire_at,email,phone,status,admin_chk,job_level_id,dept_id)
+			VALUES(#{id},#{user_id},#{password},#{name},#{birth_at},#{hire_at},#{email},#{phone},1,0,#{job_level_id},#{dept_id})
+	</insert>
+
+	<insert id="userfileWrite">
+		INSERT INTO attachment(ori_file_name, id, classification, identify_value)
+			VALUES(#{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+
+	
+	<select id = "login" resultType="map">
+		SELECT id, password FROM member WHERE user_id = #{param1}
+	</select>
+	
+	<select id = "loginid" resultType="String">
+		SELECT id FROM member WHERE user_id = #{param1}
+	</select>
+	
+	<select id="idChk" resultType="int">
+      SELECT COUNT(user_id) FROM member WHERE user_id = #{param1}
+    </select>
+    
+    <select id="getUserInfo" parameterType="hashmap"
+		resultType="kr.co.cc.member.dto.MemberDTO">
+		SELECT user_id
+		, password
+		, name
+		, birth_at
+		, hire_at
+		, email
+		, phone
+		, status
+		, admin_chk
+		, job_level_id
+		, dept_id
+		FROM member
+		WHERE name = #{name}
+		AND email = #{email}
+	</select>
+    
+    
+    <select id="getUserInfoPW" parameterType="hashmap"
+		resultType="kr.co.cc.member.dto.MemberDTO">
+		SELECT user_id
+		, password
+		, name
+		, birth_at
+		, hire_at
+		, email
+		, phone
+		, status
+		, admin_chk
+		, job_level_id
+		, dept_id
+		FROM member
+		WHERE user_id = #{user_id}
+		AND name = #{name}
+		AND email = #{email}
+	</select>
+	
+	<update id="updateTemporaryPassword" parameterType="kr.co.cc.member.dto.MemberDTO">
+  		UPDATE member SET password = #{password} WHERE user_id = #{user_id}
+	</update>
+	
+	<select id="userInfo" resultType="kr.co.cc.member.dto.MemberDTO" parameterType="String">
+	  SELECT m.*,
+	         a.id AS photoName,
+	         a.ori_file_name,
+	         a.classification,
+	         a.identify_value
+	  FROM member m
+	  LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = '프로필사진'
+	  WHERE m.id = #{id}
+	</select>
+	
+	<update id="userInfoUpdate" parameterType="hashmap">
+		  UPDATE member SET
+			    name = #{name},
+			    job_level_id = #{job_level_id},
+			    dept_id = #{dept_id},
+			    email = #{email},
+			    phone = #{phone}
+		  WHERE id = #{id}
+	</update>
+	
+		
+	<insert id="userinfofileWrite">
+		INSERT INTO attachment(ori_file_name, id, classification, identify_value)
+			VALUES(#{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+	
+	<delete id="removeProfilePicture" parameterType="String">
+    DELETE FROM attachment WHERE identify_value = #{identify_value} AND classification = '프로필사진'
+	</delete>
+	
+	<delete id="removeFileName" parameterType="String">
+	  DELETE FROM attachment WHERE id = #{fileName} AND classification = '프로필사진'
+	</delete>
+	
+	
+	
+	<delete id="removesignProfilePicture" parameterType="String">
+	    DELETE FROM attachment WHERE identify_value = #{identify_value} AND classification = '서명이미지'
+	</delete>
+	
+	<update id="signprofileUpdate" parameterType="String">
+	    UPDATE attachment SET 
+	    	ori_file_name = #{ori_file_name},
+	    	classification = '서명이미지', 
+	    	id = #{id}  
+	    WHERE identify_value = #{identify_value}
+	</update>
+	
+	<select id="signInfo" resultType="kr.co.cc.member.dto.MemberDTO" parameterType="String">
+		 SELECT m.*,
+		         a.id AS photoName,
+		         a.ori_file_name,
+		         a.classification,
+		         a.identify_value
+		 FROM member m
+		 LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = '서명이미지'
+		 WHERE m.id = #{id}
+	</select>
+	
+	<select id="totalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM member WHERE status = 1
+	</select>
+
+	<select id="totalCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM member
+		WHERE CONCAT(user_id, name, email) LIKE CONCAT('%', #{search}, '%') AND status = 1
+	</select>
+	
+	<select id="departmentlist" resultType="kr.co.cc.member.dto.MemberDTO">
+		SELECT user_id, m.name, email, m.dept_id, m.job_level_id
+		FROM member m
+		JOIN dept d ON d.id = m.dept_id
+		JOIN job_level j ON j.id = m.job_level_id
+		WHERE m.status = 1
+		LIMIT 10 OFFSET #{offset}
+	</select>	
+
+	<select id="departmentlistSearch" parameterType="hashmap" resultType="kr.co.cc.member.dto.MemberDTO">
+	    SELECT user_id, m.name, email, m.dept_id, m.job_level_id
+		FROM member m
+		JOIN dept d ON d.id = m.dept_id
+		JOIN job_level j ON j.id = m.job_level_id
+	    WHERE CONCAT(user_id, m.name, email) LIKE CONCAT('%', #{search}, '%') 
+	    AND m.status = 1
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+
+	
+	
+
+	
+	
+	
+	<select id="mainPage" parameterType="kr.co.cc.main.dto.MainDTO">
+		SELECT m.id AS m_id, d.id AS d_id, jl.id AS jl_id, m.user_id, m.name AS m_name, d.name AS d_name, jl.name AS jl_name, a.id AS a_id, m.admin_chk
+		FROM member m
+		JOIN dept d ON m.dept_id = d.id
+		JOIN job_level jl ON m.job_level_id = jl.id
+		LEFT JOIN attachment a ON m.id = a.identify_value AND a.classification = '프로필사진'
+		WHERE m.id = #{loginId}
+	</select>	
+
+</mapper>

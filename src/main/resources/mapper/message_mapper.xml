@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC	"-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="kr.co.cc.message.dao.MessageDAO">
+
+	<select id="sendtotalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (ms.id) FROM message ms
+		JOIN member m on ms.from_id = m.id
+		WHERE m.id = #{loginId} AND ms.del_chk = 0
+	</select>
+
+	<select id="sendtotalCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (ms.id) FROM message ms
+		JOIN member m ON ms.from_id = m.id
+		JOIN member m1 on ms.to_id = m1.id
+		WHERE ms.from_id = #{loginId} AND ms.del_chk = 0 AND CONCAT(ms.title, m1.name) LIKE CONCAT('%', #{search}, '%') 
+	</select>	
+
+	<!-- 보낸 쪽지함 -->
+	<select id="sendList" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.to_id ,m1.name AS to_name, m.name AS from_name , ms.title , ms.send_at ,m.admin_chk, ms.read_chk ,ms.del_chk 
+		FROM message ms 
+		JOIN member m on ms.from_id = m.id 
+		JOIN member m1 on ms.to_id = m1.id
+		WHERE m.id = #{loginId} AND ms.del_chk = 0 
+		ORDER BY send_at DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+
+	<select id="sendListSearch" parameterType="hashmap" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.to_id ,m1.name AS to_name, m.name AS from_name ,m.admin_chk, ms.title , ms.send_at , ms.read_chk ,ms.del_chk 
+		FROM message ms 
+		JOIN member m on ms.from_id = m.id 
+		JOIN member m1 on ms.to_id = m1.id
+	    WHERE 
+	    CONCAT(ms.title, m1.name) LIKE CONCAT('%', #{search}, '%') 
+	    AND ms.del_chk = 0
+	    AND ms.from_id = #{loginId}
+	    ORDER BY send_at DESC
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<!-- 받은 쪽지함 -->
+	<select id="receivetotalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (ms.id) FROM message ms
+		JOIN member m on ms.to_id = m.id
+		WHERE ms.to_id = #{loginId} AND ms.del_chk = 0
+	</select>
+
+	<select id="receivetotalCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (ms.id) FROM message ms
+		JOIN member m ON ms.to_id = m.id
+		JOIN member m1 on ms.from_id = m1.id
+		WHERE ms.to_id = #{loginId} AND ms.del_chk = 0 AND CONCAT(ms.title, m1.name) LIKE CONCAT('%', #{search}, '%') 
+	</select>	
+
+	<!-- 받은 쪽지함 -->
+	<select id="receiveList" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.to_id ,m1.name AS to_name, m.name AS from_name , ms.title , ms.send_at ,m.admin_chk, ms.read_chk ,ms.del_chk 
+		FROM message ms 
+		JOIN member m on ms.to_id = m.id 
+		JOIN member m1 on ms.from_id = m1.id
+		WHERE m.id = #{loginId} AND ms.del_chk = 0 
+		ORDER BY send_at DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+
+	<select id="receiveListSearch" parameterType="hashmap" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.to_id ,m1.name AS to_name, m.name AS from_name ,m.admin_chk, ms.title , ms.send_at , ms.read_chk ,ms.del_chk 
+		FROM message ms 
+		JOIN member m on ms.to_id = m.id 
+		JOIN member m1 on ms.from_id = m1.id
+	    WHERE 
+	    CONCAT(ms.title, m1.name) LIKE CONCAT('%', #{search}, '%') 
+	    AND ms.del_chk = 0
+	    AND ms.to_id = #{loginId}
+	    ORDER BY send_at DESC
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+
+
+   <insert id="msNotice" parameterType="string">
+      INSERT INTO notice(send_id, receive_id, type, identify_value) 
+         VALUES(#{send_id}, #{recieveId}, #{type}, #{identifyValue})
+   </insert>
+
+
+
+
+	<!-- 휴지통 -->
+	<select id="msremovetotalCount" parameterType="String" resultType ="int">
+		SELECT COUNT (id) FROM message
+		WHERE to_id = #{loginId} AND del_chk = 1
+	</select>
+
+	<select id="msremoveCountSearch" parameterType="String" resultType ="int">
+		SELECT COUNT (ms.id) FROM message ms
+		JOIN member m ON ms.to_id = m.id
+		WHERE ms.to_id = #{loginId} AND ms.del_chk = 1 AND CONCAT(ms.title, m.name) LIKE CONCAT('%', #{search}, '%') 
+	</select>	
+
+	<!-- 휴지통 리스트 -->
+	<select id="msremovedList" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , m.name , ms.title , ms.send_at ,ms.del_chk 
+		FROM message ms 
+		JOIN member m on ms.to_id = m.id
+		WHERE ms.to_id = #{loginId} AND ms.del_chk = 1 
+		ORDER BY send_at DESC
+		LIMIT 10 OFFSET #{offset}
+	</select>
+
+	<select id="msremoveListSearch" parameterType="hashmap" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , m.name , ms.title , ms.send_at ,ms.del_chk
+		FROM message ms 
+		JOIN member m on ms.to_id = m.id
+	    WHERE ms.to_id = #{loginId}
+	    AND CONCAT(ms.title, m.name) LIKE CONCAT('%', #{search}, '%') 
+	    AND ms.del_chk = 1
+	    ORDER BY send_at DESC
+	    LIMIT 10 OFFSET #{offset}
+	</select>
+	
+	<!-- 쪽지 작성 -->
+	<insert 	
+	id="msWrite" 
+	parameterType="kr.co.cc.message.dto.MessageDTO"
+	useGeneratedKeys="false"
+	>
+    <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+       SELECT UUID()
+    </selectKey>
+		INSERT INTO message (id,from_id,to_id,title,content,del_chk,read_chk)	
+		values(#{id},#{from_id},#{to_id},#{title},#{content},0,0)		
+	</insert>
+	
+	<!-- 파일 첨부 -->
+	<insert id="msfileWrite">
+		INSERT INTO attachment(ori_file_name, id, classification, identify_value)
+			VALUES(#{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+	
+	
+	<select id="msReplyMember">
+		SELECT name FROM member WHERE id = #{fromId}
+	</select>
+	
+	<!-- 삭제 -->
+	<update id="msdelete">
+		UPDATE message SET del_chk = 1 WHERE id = #{param1}
+	</update>
+	
+	<!-- 검색 -->
+	<select id="search" resultType="kr.co.cc.message.dto.MessageDTO" parameterType="HashMap">
+		SELECT * FROM message
+			<where>
+			<if test="keyword != null and !keyword.equals('') ">
+			title LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			</where>
+	</select>
+
+	<!-- 쪽지 상세보기 -->
+	<select id="msdetail" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.from_id ,ms.to_id ,ms.title ,ms.content ,ms.send_at ,ms.del_chk ,ms.read_chk , m1.name, m1.user_id, m.dept_id,
+				m.name AS from_name, m.user_id AS tofrom_id, d.name AS dept_name 
+		FROM message ms
+		JOIN member m ON ms.to_id = m.id
+		JOIN member m1 ON ms.from_id = m1.id
+		JOIN dept d ON m.dept_id = d.id 
+		WHERE ms.id =#{id}
+	</select>	
+	
+	
+	<select id="msSenddetail" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT ms.id , ms.from_id ,ms.to_id ,ms.title ,ms.content ,ms.send_at ,ms.del_chk ,ms.read_chk , m.dept_id, m.name, m.user_id, d.name AS dept_name 
+		FROM message ms
+		JOIN member m ON ms.to_id = m.id
+		JOIN dept d ON m.dept_id = d.id 
+		WHERE ms.id =#{id}
+	</select>	
+
+	<!-- 읽음 처리 -->
+	<update id="upHit">
+		UPDATE message SET read_chk = 1 WHERE id = #{id}
+	</update>	
+	
+	<select id="msDetailFile" resultType="kr.co.cc.message.dto.MessageDTO">
+      SELECT * FROM attachment 
+      WHERE identify_value = #{id}
+	</select>
+	
+	<!-- 모달 창 안에 있는 값 -->
+	<select id="msDeptList" resultType="kr.co.cc.message.dto.MessageDTO" >
+		SELECT m.id, m.name AS member_name, d.name AS dept_name
+		FROM member m
+		JOIN dept d ON m.dept_id = d.id
+		WHERE d.status = 1
+	</select>
+	
+	<select id="msDept" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT name
+		FROM dept
+		WHERE status = 1
+	</select>	
+	
+	
+	<select id="sendMemberchk">
+		SELECT m.id, m.name AS member_name, m.user_id ,d.name AS dept_name
+		FROM member m
+		JOIN dept d ON m.dept_id = d.id
+		WHERE m.id = #{id}
+	</select>	
+	
+	
+	<update id="msSelectDelete" parameterType="java.lang.String">
+		UPDATE message SET del_chk = 1 WHERE del_chk = 0 and id = #{id}
+	</update>	
+	
+	<select id="selectFile">
+		SELECT ori_file_name FROM attachment WHERE id = #{id}
+	</select>
+	
+	
+	<select id="logincheck" resultType="kr.co.cc.message.dto.MessageDTO">
+		SELECT admin_chk FROM member WHERE id = #{param1}
+	</select>
+	
+	
+	<select id="MemberByDept">
+		SELECT m.id, m.name AS member_name, m.user_id, d.id AS dept_id , d.name AS dept_name
+		FROM member m
+		JOIN dept d ON m.dept_id = d.id
+		WHERE d.name = #{dept}
+	</select>	
+	
+	
+	<update id="readMessage" parameterType="String">
+		UPDATE notice set status = 1
+		WHERE identify_value=#{id}
+		AND receive_id=#{loginId}
+	</update>	
+	
+	
+	
+	
+	
+		
+</mapper>
