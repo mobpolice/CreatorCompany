@@ -331,12 +331,13 @@
 			, DATE_FORMAT(ds3.approval_at, '%Y-%m-%d %T') AS approval_at
 			, ds3.opinion
 			, (SELECT m.name FROM member m WHERE m.id = ds3.member_id) AS approval_member_name 
-			FROM doc d 
-			INNER JOIN 
-				(SELECT ds.* FROM doc_status ds INNER JOIN 
+		FROM doc d 
+		INNER JOIN 
+			(SELECT ds.* FROM doc_status ds 
+				INNER JOIN 
 					(SELECT MAX(ds2.order_rank) FROM doc_status ds2 GROUP BY ds2.doc_id) AS ds2 
-				WHERE ds.approval = 1 GROUP BY ds.doc_id) AS ds3 
-		ON d.id = ds3.doc_id WHERE d.status = 1 AND ds3.member_id = #{loginId} ORDER BY approval_at DESC
+					WHERE ds.approval = 1 and ds.member_id = #{loginId} GROUP BY ds.doc_id) AS ds3 
+		ON d.id = ds3.doc_id WHERE d.status = 1 ORDER BY approval_at DESC
 	</select>
 	
 	<select id="completeDocDetail" parameterType="string" resultType="hashmap">
